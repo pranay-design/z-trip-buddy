@@ -11,7 +11,7 @@ const Index = () => {
   const { items } = useSaved();
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pb-32">
       {/* Top brand bar */}
       <header className="sticky top-0 z-30 bg-background/85 backdrop-blur border-b-[3px] border-foreground">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">

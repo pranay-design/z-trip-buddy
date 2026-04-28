@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { Dice5, Search, Camera, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -16,9 +17,9 @@ const items: { id: Tab; label: string; Icon: typeof Dice5 }[] = [
   { id: "saved", label: "Saved", Icon: Star },
 ];
 
-export const BottomNav = ({ tab, onChange, savedCount }: Props) => {
+export const BottomNav = forwardRef<HTMLElement, Props>(({ tab, onChange, savedCount }, ref) => {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t-[3px] border-foreground">
+    <nav ref={ref} className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t-[3px] border-foreground pb-[env(safe-area-inset-bottom)]">
       <ul className="grid grid-cols-4 max-w-md mx-auto">
         {items.map(({ id, label, Icon }) => {
           const active = tab === id;
@@ -50,4 +51,6 @@ export const BottomNav = ({ tab, onChange, savedCount }: Props) => {
       </ul>
     </nav>
   );
-};
+});
+
+BottomNav.displayName = "BottomNav";

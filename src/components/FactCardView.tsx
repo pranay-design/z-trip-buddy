@@ -20,7 +20,7 @@ export const FactCardView = ({ item, saved, onSave, onRemove, className }: Props
   const imageSrc = isPhoto
     ? photo.imageDataUrl
     : imgErr
-    ? `https://source.unsplash.com/800x600/?japan,${encodeURIComponent(fact.category)}`
+    ? `https://loremflickr.com/800/600/${encodeURIComponent(fact.category.toLowerCase())},japan?lock=${item.id.slice(0, 4)}`
     : fact.imageUrl;
 
   return (
