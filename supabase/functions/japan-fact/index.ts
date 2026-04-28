@@ -102,9 +102,10 @@ Deno.serve(async (req) => {
     }
 
     const args = result.data;
-    // Build a stock image URL via Unsplash Source (no API key, real Japan photos)
-    const q = encodeURIComponent(`${args.imageQuery} japan`);
-    const imageUrl = `https://source.unsplash.com/800x600/?${q}`;
+    // Build a stock image URL via loremflickr (keyless, real photos from Flickr)
+    const tags = encodeURIComponent(`${args.imageQuery},japan`.toLowerCase().replace(/\s+/g, ","));
+    const lock = Math.floor(Math.random() * 1000);
+    const imageUrl = `https://loremflickr.com/800/600/${tags}?lock=${lock}`;
 
     return new Response(JSON.stringify({ ...args, imageUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
