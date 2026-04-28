@@ -1,1 +1,7 @@
 project_id = "xcjenbdjtzoajdtufcle"
+
+[functions.japan-fact]
+verify_jwt = false
+
+[functions.japan-photo]
+verify_jwt = false
