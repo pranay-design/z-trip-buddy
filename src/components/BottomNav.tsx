@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { Dice5, Search, Camera, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
