@@ -6,6 +6,7 @@ import { FactCardView } from "@/components/FactCardView";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Mascot } from "@/components/Mascot";
 import { useSaved, newId } from "@/lib/saved";
+import { sfxSparkle, sfxSave, sfxOops, sfxPop } from "@/lib/sounds";
 import type { FactCard } from "@/lib/types";
 
 const CHIPS = ["animals", "food", "ninjas", "trains", "temples", "Tokyo", "Kyoto", "anime", "festivals"];
@@ -18,9 +19,11 @@ export const SearchScreen = () => {
 
   const ask = async (topic: string) => {
     if (!topic.trim()) {
+      sfxOops();
       toast.error("Type or tap something to search!");
       return;
     }
+    sfxSparkle();
     setLoading(true);
     setCard(null);
     try {
@@ -88,6 +91,7 @@ export const SearchScreen = () => {
           <button
             key={c}
             onClick={() => {
+              sfxPop();
               setQ(c);
               ask(c);
             }}
@@ -114,6 +118,7 @@ export const SearchScreen = () => {
             item={card}
             saved={isSaved(card.id)}
             onSave={() => {
+              sfxSave();
               add(card);
               toast.success("Saved!");
             }}

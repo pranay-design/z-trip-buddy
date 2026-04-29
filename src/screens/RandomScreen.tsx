@@ -5,7 +5,9 @@ import { toast } from "sonner";
 import { FactCardView } from "@/components/FactCardView";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Mascot } from "@/components/Mascot";
+import { IntroBanner } from "@/components/IntroBanner";
 import { useSaved, newId } from "@/lib/saved";
+import { sfxSparkle, sfxSave, sfxOops } from "@/lib/sounds";
 import type { FactCard } from "@/lib/types";
 
 export const RandomScreen = () => {
@@ -14,6 +16,7 @@ export const RandomScreen = () => {
   const { add, isSaved } = useSaved();
 
   const spin = async () => {
+    sfxSparkle();
     setLoading(true);
     setCard(null);
     try {
@@ -22,6 +25,7 @@ export const RandomScreen = () => {
       });
       if (error) throw error;
       if (data?.error) {
+        sfxOops();
         toast.error(data.error);
         return;
       }
@@ -38,6 +42,7 @@ export const RandomScreen = () => {
       });
     } catch (e) {
       console.error(e);
+      sfxOops();
       toast.error("Hmm, try again!");
     } finally {
       setLoading(false);
@@ -46,16 +51,12 @@ export const RandomScreen = () => {
 
   return (
     <div className="space-y-5">
-      <header className="text-center pt-2">
+      <IntroBanner />
+
+      <header className="text-center pt-1">
         <h1 className="display text-3xl text-primary leading-tight">Surprise Me!</h1>
         <p className="text-sm font-bold text-muted-foreground">Spin for a fun fact about Japan 🎌</p>
       </header>
-
-      {!card && !loading && (
-        <div className="flex flex-col items-center gap-4 py-6">
-          <Mascot size="lg" message="Ready to explore?" />
-        </div>
-      )}
 
       {loading && <LoadingSpinner message="Finding a cool fact..." />}
 
@@ -70,6 +71,7 @@ export const RandomScreen = () => {
             item={card}
             saved={isSaved(card.id)}
             onSave={() => {
+              sfxSave();
               add(card);
               toast.success("Saved to your sticker book!");
             }}

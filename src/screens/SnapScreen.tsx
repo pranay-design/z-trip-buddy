@@ -6,6 +6,7 @@ import { FactCardView } from "@/components/FactCardView";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Mascot } from "@/components/Mascot";
 import { useSaved, newId } from "@/lib/saved";
+import { sfxShutter, sfxSave, sfxOops, sfxPop } from "@/lib/sounds";
 import type { PhotoCard } from "@/lib/types";
 import { fileToResizedDataUrl } from "@/lib/image";
 
@@ -18,9 +19,11 @@ export const SnapScreen = () => {
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
+      sfxOops();
       toast.error("Please pick a photo!");
       return;
     }
+    sfxShutter();
     setLoading(true);
     setCard(null);
     try {
@@ -49,13 +52,17 @@ export const SnapScreen = () => {
       });
     } catch (e) {
       console.error(e);
+      sfxOops();
       toast.error("Couldn't read that photo. Try another!");
     } finally {
       setLoading(false);
     }
   };
 
-  const reset = () => setCard(null);
+  const reset = () => {
+    sfxPop();
+    setCard(null);
+  };
 
   return (
     <div className="space-y-5">
@@ -115,9 +122,11 @@ export const SnapScreen = () => {
             saved={isSaved(card.id)}
             onSave={() => {
               try {
+                sfxSave();
                 add(card);
                 toast.success("Saved!");
               } catch {
+                sfxOops();
                 toast.error("Storage is full — remove some saves first.");
               }
             }}
