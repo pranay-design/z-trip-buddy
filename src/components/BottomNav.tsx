@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import { Dice5, Search, Camera, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { sfxBlip } from "@/lib/sounds";
 
 export type Tab = "random" | "search" | "snap" | "saved";
 
@@ -26,7 +27,10 @@ export const BottomNav = forwardRef<HTMLElement, Props>(({ tab, onChange, savedC
           return (
             <li key={id}>
               <button
-                onClick={() => onChange(id)}
+                onClick={() => {
+                  if (tab !== id) sfxBlip();
+                  onChange(id);
+                }}
                 className={cn(
                   "w-full flex flex-col items-center gap-0.5 py-2.5 font-extrabold text-xs transition-colors relative",
                   active ? "text-primary" : "text-muted-foreground"
