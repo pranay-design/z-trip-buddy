@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.japan-photo]
 verify_jwt = false
+
+[functions.elevenlabs-tts]
+verify_jwt = false
