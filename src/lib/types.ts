@@ -1,5 +1,11 @@
 export type SavedKind = "fact" | "photo";
 
+export interface MoreDetails {
+  didYouKnow: string[];
+  spotIt: string;
+  mascotSays?: string;
+}
+
 export interface FactCard {
   id: string;
   kind: "fact";
@@ -10,6 +16,7 @@ export interface FactCard {
   mascotSays?: string;
   source: "random" | "topic";
   topic?: string;
+  more?: MoreDetails;
   savedAt: number;
 }
 
