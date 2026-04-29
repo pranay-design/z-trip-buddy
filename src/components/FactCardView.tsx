@@ -1,27 +1,66 @@
-import { Star, StarOff, Trash2 } from "lucide-react";
-import type { FactCard, PhotoCard, SavedItem } from "@/lib/types";
+import { Star, StarOff, Trash2, Sparkles, ChevronDown } from "lucide-react";
+import type { FactCard, PhotoCard, SavedItem, MoreDetails } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Props {
   item: SavedItem;
   saved?: boolean;
   onSave?: () => void;
   onRemove?: () => void;
+  onMoreLoaded?: (more: MoreDetails) => void;
   className?: string;
 }
 
-export const FactCardView = ({ item, saved, onSave, onRemove, className }: Props) => {
+export const FactCardView = ({ item, saved, onSave, onRemove, onMoreLoaded, className }: Props) => {
   const [imgErr, setImgErr] = useState(false);
   const isPhoto = item.kind === "photo";
   const fact = item as FactCard;
   const photo = item as PhotoCard;
 
+  const [more, setMore] = useState<MoreDetails | undefined>(!isPhoto ? fact.more : undefined);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  const fallbackImg = `https://picsum.photos/seed/${encodeURIComponent(item.title)}-japan/800/600`;
   const imageSrc = isPhoto
     ? photo.imageDataUrl
     : imgErr
-    ? `https://loremflickr.com/800/600/${encodeURIComponent(fact.category.toLowerCase())},japan?lock=${item.id.slice(0, 4)}`
+    ? fallbackImg
     : fact.imageUrl;
+
+  const fetchMore = async () => {
+    if (more) {
+      setExpanded((v) => !v);
+      return;
+    }
+    setLoadingMore(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("japan-fact", {
+        body: { mode: "more", title: fact.title, fact: fact.fact, topic: fact.topic },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+      const m: MoreDetails = {
+        didYouKnow: data.didYouKnow ?? [],
+        spotIt: data.spotIt ?? "",
+        mascotSays: data.mascotSays,
+      };
+      setMore(m);
+      setExpanded(true);
+      onMoreLoaded?.(m);
+    } catch (e) {
+      console.error(e);
+      toast.error("Couldn't load more right now.");
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   return (
     <article
@@ -68,7 +107,55 @@ export const FactCardView = ({ item, saved, onSave, onRemove, className }: Props
             </div>
           </>
         ) : (
-          <p className="text-base font-semibold leading-snug">{fact.fact}</p>
+          <>
+            <p className="text-base font-semibold leading-snug">{fact.fact}</p>
+
+            <button
+              onClick={fetchMore}
+              disabled={loadingMore}
+              className="w-full comic-border-sm rounded-full py-2.5 px-4 font-extrabold bg-secondary text-secondary-foreground flex items-center justify-center gap-2 active:translate-y-0.5 transition disabled:opacity-60"
+            >
+              <Sparkles className="w-5 h-5" />
+              {loadingMore
+                ? "Digging deeper..."
+                : more
+                ? expanded
+                  ? "Show less"
+                  : "Show more"
+                : "Tell me more!"}
+              {more && (
+                <ChevronDown
+                  className={cn("w-4 h-4 transition-transform", expanded && "rotate-180")}
+                />
+              )}
+            </button>
+
+            {more && expanded && (
+              <div className="space-y-3 animate-pop-in">
+                <div className="comic-border-sm rounded-2xl bg-muted p-3 space-y-2">
+                  <div className="text-xs font-extrabold uppercase tracking-wider text-primary">
+                    Did you know?
+                  </div>
+                  <ul className="space-y-1.5">
+                    {more.didYouKnow.map((d, i) => (
+                      <li key={i} className="text-sm font-semibold leading-snug flex gap-2">
+                        <span className="text-secondary font-extrabold">★</span>
+                        <span>{d}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                {more.spotIt && (
+                  <div className="comic-border-sm rounded-2xl bg-accent/30 p-3">
+                    <div className="text-xs font-extrabold uppercase tracking-wider mb-1">
+                      Spot it on the trip!
+                    </div>
+                    <p className="text-sm font-semibold leading-snug">{more.spotIt}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
 
         <div className="flex gap-2 pt-1">
