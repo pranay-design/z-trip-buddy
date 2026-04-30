@@ -16,6 +16,16 @@ interface UseSpeakResult {
 // Many browsers (Chrome especially) populate getVoices() asynchronously.
 // We resolve a promise once voices are ready so playback isn't silent.
 let voicesReadyPromise: Promise<SpeechSynthesisVoice[]> | null = null;
+let activeUtterance: SpeechSynthesisUtterance | null = null;
+let activeKeepAlive: ReturnType<typeof setInterval> | null = null;
+
+function clearActiveSpeech() {
+  if (activeKeepAlive) {
+    clearInterval(activeKeepAlive);
+    activeKeepAlive = null;
+  }
+  activeUtterance = null;
+}
 
 function loadVoices(): Promise<SpeechSynthesisVoice[]> {
   if (typeof window === "undefined" || !window.speechSynthesis) {
@@ -64,12 +74,11 @@ function pickVoiceFor(
 ): SpeechSynthesisVoice | undefined {
   if (!voices.length) return undefined;
   const profile = character.browserVoice;
-  const japaneseVoices = voices.filter((v) => /^ja[-_]?JP/i.test(v.lang) || /japanese|日本語/i.test(v.name));
+  const englishVoices = voices.filter((v) => /^en[-_]/i.test(v.lang));
   return (
-    (profile && japaneseVoices.find((v) => profile.preferredNames.test(v.name))) ||
-    japaneseVoices[0] ||
-    voices.find((v) => /^en/i.test(v.lang) && /japan|japanese/i.test(v.name)) ||
-    voices.find((v) => /^en/i.test(v.lang)) ||
+    (profile && englishVoices.find((v) => profile.preferredNames.test(v.name))) ||
+    englishVoices.find((v) => /google|microsoft|apple/i.test(v.name)) ||
+    englishVoices[0] ||
     voices[0]
   );
 }
@@ -82,28 +91,30 @@ function speakWithBrowser(
   if (typeof window === "undefined" || !window.speechSynthesis) return false;
   try {
     const synth = window.speechSynthesis;
-    if (synth.speaking || synth.pending) synth.cancel();
+    clearActiveSpeech();
 
     // This must stay synchronous when called from a tap/click. Awaiting voice
     // loading or network work first breaks the browser's media gesture chain.
     const voices = synth.getVoices();
-    const utter = new SpeechSynthesisUtterance(text);
+    const utter = new SpeechSynthesisUtterance(text.trim());
     const chosen = pickVoiceFor(character, voices);
     if (chosen) {
       utter.voice = chosen;
       utter.lang = chosen.lang;
     } else {
-      utter.lang = character.browserVoice?.lang || "ja-JP";
+      utter.lang = character.browserVoice?.lang || "en-US";
     }
 
     utter.pitch = character.browserVoice?.pitch ?? 1;
     utter.rate = character.browserVoice?.rate ?? 0.95;
     utter.volume = 1;
+    activeUtterance = utter;
 
     let ended = false;
     const finish = () => {
       if (ended) return;
       ended = true;
+      if (activeUtterance === utter) clearActiveSpeech();
       onEnd();
     };
     utter.onend = finish;
@@ -113,9 +124,9 @@ function speakWithBrowser(
     synth.speak(utter);
 
     // Chrome bug: speechSynthesis pauses after ~15s. Keep it alive.
-    const keepAlive = setInterval(() => {
+    activeKeepAlive = setInterval(() => {
       if (ended || !synth.speaking) {
-        clearInterval(keepAlive);
+        clearActiveSpeech();
         return;
       }
       synth.pause();
