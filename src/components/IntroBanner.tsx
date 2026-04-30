@@ -24,7 +24,7 @@ export const IntroBanner = () => {
 
     const tryPlay = async (fromGesture: boolean) => {
       if (cancelled || played) return;
-      const ok = await speak(character.intro, { preferBrowser: fromGesture }).catch(() => false);
+      const ok = await speak(character.spokenIntro ?? character.intro, { preferBrowser: fromGesture }).catch(() => false);
       if (cancelled) return;
       played = ok;
       if (ok) setHasPlayedOnce(true);
@@ -64,7 +64,7 @@ export const IntroBanner = () => {
       return;
     }
     setAutoBlocked(false);
-    const ok = await speak(character.intro, { preferBrowser: true });
+    const ok = await speak(character.spokenIntro ?? character.intro, { preferBrowser: true });
     if (ok) setHasPlayedOnce(true);
   };
 
