@@ -1,5 +1,6 @@
 // Lightweight ElevenLabs TTS proxy. Returns base64 MP3 + mime type.
-// CORS open (called from the kid-friendly app).
+// On failure (e.g. free-tier disabled), returns { fallback: true } so the
+// client can use the browser's built-in speech synthesis instead.
 
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
@@ -20,24 +21,24 @@ interface Body {
   };
 }
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const apiKey = Deno.env.get("ELEVENLABS_API_KEY");
     if (!apiKey) {
-      return new Response(JSON.stringify({ error: "ELEVENLABS_API_KEY not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ fallback: true, reason: "missing_api_key" });
     }
 
     const { text, voiceId, voiceSettings }: Body = await req.json();
     if (!text || !voiceId) {
-      return new Response(JSON.stringify({ error: "text and voiceId required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "text and voiceId required" }, 400);
     }
 
     const trimmed = text.length > 600 ? text.slice(0, 600) : text;
@@ -67,23 +68,20 @@ Deno.serve(async (req) => {
     if (!ttsResp.ok) {
       const errText = await ttsResp.text();
       console.error("ElevenLabs TTS failed", ttsResp.status, errText);
-      return new Response(
-        JSON.stringify({ error: `TTS failed (${ttsResp.status})`, detail: errText.slice(0, 300) }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      // Return 200 with fallback flag so client can degrade gracefully.
+      return json({
+        fallback: true,
+        reason: ttsResp.status === 401 ? "elevenlabs_unavailable" : `status_${ttsResp.status}`,
+        detail: errText.slice(0, 200),
+      });
     }
 
     const audio = await ttsResp.arrayBuffer();
     const audioContent = base64Encode(audio);
 
-    return new Response(JSON.stringify({ audioContent, mimeType: "audio/mpeg" }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ audioContent, mimeType: "audio/mpeg" });
   } catch (e) {
     console.error("tts error", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ fallback: true, reason: "exception", error: e instanceof Error ? e.message : "Unknown" });
   }
 });
