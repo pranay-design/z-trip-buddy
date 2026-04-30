@@ -20,6 +20,7 @@ let voicesReadyPromise: Promise<SpeechSynthesisVoice[]> | null = null;
 let activeUtterance: SpeechSynthesisUtterance | null = null;
 let activeKeepAlive: ReturnType<typeof setInterval> | null = null;
 let sharedAudioContext: AudioContext | null = null;
+const audioCache = new Map<string, AudioBuffer>();
 
 function clearActiveSpeech() {
   if (activeKeepAlive) {
@@ -161,8 +162,47 @@ function speakWithBrowser(
   }
 }
 
+async function speakWithElevenLabs(
+  text: string,
+  character: Character,
+  audioContext: AudioContext | null,
+  onSource: (source: AudioBufferSourceNode) => void,
+  onEnd: () => void
+): Promise<boolean> {
+  if (!audioContext) return false;
+  try {
+    const cacheKey = `${character.id}:${text}`;
+    let buffer = audioCache.get(cacheKey);
+
+    if (!buffer) {
+      const { data, error } = await supabase.functions.invoke("elevenlabs-tts", {
+        body: {
+          text,
+          voiceId: character.voiceId,
+          voiceSettings: character.voiceSettings,
+        },
+      });
+
+      if (error || !data?.audioContent || data?.fallback) return false;
+      buffer = await audioContext.decodeAudioData(base64ToArrayBuffer(data.audioContent));
+      audioCache.set(cacheKey, buffer);
+    }
+
+    const source = audioContext.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioContext.destination);
+    source.onended = onEnd;
+    onSource(source);
+    source.start(0);
+    return true;
+  } catch (error) {
+    console.warn("speakWithElevenLabs failed", error);
+    return false;
+  }
+}
+
 export function useSpeak(character: Character): UseSpeakResult {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioRef = useRef<AudioBufferSourceNode | null>(null);
   const [loading, setLoading] = useState(false);
   const [playing, setPlaying] = useState(false);
 
@@ -173,8 +213,12 @@ export function useSpeak(character: Character): UseSpeakResult {
 
   const stop = useCallback(() => {
     if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+      audioRef.current.onended = null;
+      try {
+        audioRef.current.stop();
+      } catch {
+        // Already stopped.
+      }
       audioRef.current = null;
     }
     if (typeof window !== "undefined" && window.speechSynthesis) {
@@ -184,15 +228,34 @@ export function useSpeak(character: Character): UseSpeakResult {
   }, []);
 
   const speak = useCallback(
-    async (text: string, _options: SpeakOptions = {}) => {
+    async (text: string, options: SpeakOptions = {}) => {
       if (audioRef.current) {
-        audioRef.current.pause();
+        audioRef.current.onended = null;
+        try {
+          audioRef.current.stop();
+        } catch {
+          // Already stopped.
+        }
         audioRef.current = null;
       }
 
+      const audioContext = unlockAudioContext();
       setPlaying(true);
-      const ok = speakWithBrowser(text, character, () => setPlaying(false));
-      if (!ok) setPlaying(false);
+      const finish = () => {
+        audioRef.current = null;
+        setPlaying(false);
+      };
+
+      let ok = false;
+      if (options.preferBrowser) {
+        setLoading(true);
+        ok = await speakWithElevenLabs(text, character, audioContext, (source) => {
+          audioRef.current = source;
+        }, finish);
+        setLoading(false);
+      }
+
+      if (!ok) ok = speakWithBrowser(text, character, finish);
       return ok;
     },
     [character]
