@@ -1,20 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import type { Character } from "@/lib/characters";
 
+interface SpeakOptions {
+  preferBrowser?: boolean;
+}
+
 interface UseSpeakResult {
-  speak: (text: string) => Promise<void>;
+  speak: (text: string, options?: SpeakOptions) => Promise<boolean>;
   stop: () => void;
   loading: boolean;
   playing: boolean;
 }
-
-// In-memory cache so re-clicking the intro doesn't re-fetch.
-const cache = new Map<string, string>(); // key -> data url
-
-// Once ElevenLabs has signaled unavailable, skip the network round-trip
-// for the rest of the session and use the browser fallback directly.
-let elevenLabsDisabled = false;
 
 // --- Browser voice loading -------------------------------------------------
 // Many browsers (Chrome especially) populate getVoices() asynchronously.
@@ -67,56 +63,41 @@ function pickVoiceFor(
   voices: SpeechSynthesisVoice[]
 ): SpeechSynthesisVoice | undefined {
   if (!voices.length) return undefined;
-  let chosen: SpeechSynthesisVoice | undefined;
-  if (character.id === "tanuki") {
-    chosen =
-      voices.find((v) => /en/i.test(v.lang) && /(daniel|fred|alex|google uk english male|male)/i.test(v.name)) ||
-      voices.find((v) => /en-GB/i.test(v.lang));
-  } else if (character.id === "maneki") {
-    chosen =
-      voices.find((v) => /en/i.test(v.lang) && /(samantha|karen|tessa|google us english|female)/i.test(v.name)) ||
-      voices.find((v) => /en-US/i.test(v.lang));
-  } else {
-    chosen =
-      voices.find((v) => /en/i.test(v.lang) && /(moira|fiona|serena|google uk english female)/i.test(v.name)) ||
-      voices.find((v) => /en-AU|en-IE|en-GB/i.test(v.lang));
-  }
-  return chosen || voices.find((v) => v.lang?.toLowerCase().startsWith("en")) || voices[0];
+  const profile = character.browserVoice;
+  const japaneseVoices = voices.filter((v) => /^ja[-_]?JP/i.test(v.lang) || /japanese|日本語/i.test(v.name));
+  return (
+    (profile && japaneseVoices.find((v) => profile.preferredNames.test(v.name))) ||
+    japaneseVoices[0] ||
+    voices.find((v) => /^en/i.test(v.lang) && /japan|japanese/i.test(v.name)) ||
+    voices.find((v) => /^en/i.test(v.lang)) ||
+    voices[0]
+  );
 }
 
-async function speakWithBrowser(
+function speakWithBrowser(
   text: string,
   character: Character,
   onEnd: () => void
-): Promise<boolean> {
+): boolean {
   if (typeof window === "undefined" || !window.speechSynthesis) return false;
   try {
     const synth = window.speechSynthesis;
-    // Cancel anything queued, then wait a tick — Chrome can swallow the next
-    // utterance if speak() is called synchronously after cancel().
-    synth.cancel();
-    await new Promise((r) => setTimeout(r, 60));
+    if (synth.speaking || synth.pending) synth.cancel();
 
-    const voices = await loadVoices();
+    // This must stay synchronous when called from a tap/click. Awaiting voice
+    // loading or network work first breaks the browser's media gesture chain.
+    const voices = synth.getVoices();
     const utter = new SpeechSynthesisUtterance(text);
     const chosen = pickVoiceFor(character, voices);
     if (chosen) {
       utter.voice = chosen;
       utter.lang = chosen.lang;
     } else {
-      utter.lang = "en-US";
+      utter.lang = character.browserVoice?.lang || "ja-JP";
     }
 
-    if (character.id === "tanuki") {
-      utter.pitch = 0.8;
-      utter.rate = 1.05;
-    } else if (character.id === "maneki") {
-      utter.pitch = 1.6;
-      utter.rate = 1.1;
-    } else {
-      utter.pitch = 1.15;
-      utter.rate = 0.9;
-    }
+    utter.pitch = character.browserVoice?.pitch ?? 1;
+    utter.rate = character.browserVoice?.rate ?? 0.95;
     utter.volume = 1;
 
     let ended = false;
@@ -128,6 +109,7 @@ async function speakWithBrowser(
     utter.onend = finish;
     utter.onerror = finish;
 
+    synth.resume();
     synth.speak(utter);
 
     // Chrome bug: speechSynthesis pauses after ~15s. Keep it alive.
@@ -170,71 +152,16 @@ export function useSpeak(character: Character): UseSpeakResult {
   }, []);
 
   const speak = useCallback(
-    async (text: string) => {
-      // Don't call stop() unconditionally — on some browsers the immediate
-      // cancel() right before speak() drops the new utterance.
+    async (text: string, _options: SpeakOptions = {}) => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
       }
 
-      // Fast path: ElevenLabs already known to be unavailable this session.
-      if (elevenLabsDisabled) {
-        setPlaying(true);
-        const ok = await speakWithBrowser(text, character, () => setPlaying(false));
-        if (!ok) setPlaying(false);
-        return;
-      }
-
-      const key = `${character.voiceId}::${text}`;
-      let dataUrl = cache.get(key);
-
-      if (!dataUrl) {
-        setLoading(true);
-        try {
-          const { data, error } = await supabase.functions.invoke("elevenlabs-tts", {
-            body: {
-              text,
-              voiceId: character.voiceId,
-              voiceSettings: character.voiceSettings,
-            },
-          });
-          if (error) throw error;
-
-          if (data?.fallback) {
-            elevenLabsDisabled = true;
-            setLoading(false);
-            setPlaying(true);
-            const ok = await speakWithBrowser(text, character, () => setPlaying(false));
-            if (!ok) setPlaying(false);
-            return;
-          }
-
-          if (!data?.audioContent) throw new Error("No audio returned");
-          dataUrl = `data:${data.mimeType || "audio/mpeg"};base64,${data.audioContent}`;
-          cache.set(key, dataUrl);
-        } catch (e) {
-          console.error("TTS error", e);
-          setLoading(false);
-          elevenLabsDisabled = true;
-          setPlaying(true);
-          const ok = await speakWithBrowser(text, character, () => setPlaying(false));
-          if (!ok) setPlaying(false);
-          return;
-        }
-        setLoading(false);
-      }
-
-      const audio = new Audio(dataUrl);
-      audioRef.current = audio;
-      audio.onended = () => setPlaying(false);
-      audio.onerror = () => setPlaying(false);
       setPlaying(true);
-      try {
-        await audio.play();
-      } catch {
-        setPlaying(false);
-      }
+      const ok = speakWithBrowser(text, character, () => setPlaying(false));
+      if (!ok) setPlaying(false);
+      return ok;
     },
     [character]
   );

@@ -24,22 +24,18 @@ export const IntroBanner = () => {
 
     const tryPlay = async (fromGesture: boolean) => {
       if (cancelled || played) return;
-      played = true;
-      const ok = await speak(character.intro)
-        .then(() => true)
-        .catch(() => false);
+      const ok = await speak(character.intro, { preferBrowser: fromGesture }).catch(() => false);
       if (cancelled) return;
-      setHasPlayedOnce(true);
+      played = ok;
+      if (ok) setHasPlayedOnce(true);
       if (!ok && !fromGesture) setAutoBlocked(true);
     };
 
-    // First try without gesture (works on some browsers / when synth is ready).
-    const t = setTimeout(() => {
-      tryPlay(false).catch(() => setAutoBlocked(true));
-    }, 400);
+    const hintTimer = setTimeout(() => setAutoBlocked(true), 650);
 
     // Also bind a one-shot gesture listener as a reliable fallback.
-    const onGesture = () => {
+    const onGesture = (event: Event) => {
+      if ((event.target as HTMLElement | null)?.closest("button")) return;
       tryPlay(true);
       cleanup();
     };
@@ -52,14 +48,8 @@ export const IntroBanner = () => {
     window.addEventListener("keydown", onGesture, { once: true });
     window.addEventListener("touchstart", onGesture, { once: true });
 
-    // After a short window, if nothing played yet, surface the "tap to hear" hint.
-    const hintTimer = setTimeout(() => {
-      if (!played) setAutoBlocked(true);
-    }, 1500);
-
     return () => {
       cancelled = true;
-      clearTimeout(t);
       clearTimeout(hintTimer);
       cleanup();
       stop();
@@ -74,8 +64,8 @@ export const IntroBanner = () => {
       return;
     }
     setAutoBlocked(false);
-    await speak(character.intro);
-    setHasPlayedOnce(true);
+    const ok = await speak(character.intro, { preferBrowser: true });
+    if (ok) setHasPlayedOnce(true);
   };
 
   return (

@@ -21,6 +21,14 @@ export interface Character {
     style?: number;
     speed?: number;
   };
+  // Browser Speech Synthesis fallback tuning. Japanese voices make the
+  // English intros sound Japanese-accented when available on the device.
+  browserVoice?: {
+    lang: "ja-JP";
+    pitch: number;
+    rate: number;
+    preferredNames: RegExp;
+  };
   // Theme accent color (HSL string, no hsl() wrapper)
   accentHsl: string;
 }
@@ -36,6 +44,7 @@ export const CHARACTERS: Record<CharacterId, Character> = {
       "Hi hi! I'm Pon the Tanuki! I'm a lucky shape-shifter from Japanese folklore. Let's hunt for fun facts together!",
     voiceId: "nPczCjzI2devNBz1zQrb", // Brian — deep, jolly, mischievous
     voiceSettings: { stability: 0.3, similarity_boost: 0.75, style: 0.7, speed: 1.1 },
+    browserVoice: { lang: "ja-JP", pitch: 0.82, rate: 0.92, preferredNames: /(otoya|ichiro|google.*日本語|google.*japanese|kyoko|haruka)/i },
     accentHsl: "28 80% 50%",
   },
   maneki: {
@@ -48,6 +57,7 @@ export const CHARACTERS: Record<CharacterId, Character> = {
       "Konnichiwa! I'm Miko the lucky cat! My paw waves in good fortune. Ready to discover something wonderful?",
     voiceId: "pFZP5JQG7iQjIQuC4Bku", // Lily — sweet, high, cheerful
     voiceSettings: { stability: 0.55, similarity_boost: 0.9, style: 0.4, speed: 1.08 },
+    browserVoice: { lang: "ja-JP", pitch: 1.58, rate: 1.02, preferredNames: /(kyoko|haruka|google.*日本語|google.*japanese|samantha)/i },
     accentHsl: "350 80% 60%",
   },
   kitsune: {
@@ -60,6 +70,7 @@ export const CHARACTERS: Record<CharacterId, Character> = {
       "Greetings, little explorer! I am Kit the Kitsune, a clever fox spirit. Together we shall uncover Japan's secrets!",
     voiceId: "SAz9YHcvj6GT2YYXdXww", // River — calm, mystical, wise
     voiceSettings: { stability: 0.7, similarity_boost: 0.8, style: 0.6, speed: 0.92 },
+    browserVoice: { lang: "ja-JP", pitch: 1.04, rate: 0.82, preferredNames: /(kyoko|otoya|hattori|google.*日本語|google.*japanese|fiona|serena)/i },
     accentHsl: "358 78% 54%",
   },
 };
