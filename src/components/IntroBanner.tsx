@@ -10,32 +10,72 @@ export const IntroBanner = () => {
   const { speak, stop, loading, playing } = useSpeak(character);
   const triedAuto = useRef(false);
   const [autoBlocked, setAutoBlocked] = useState(false);
+  const [hasPlayedOnce, setHasPlayedOnce] = useState(false);
 
-  // Try to auto-play the intro once on mount. Most browsers block autoplay
-  // without a user gesture — we fall back to a "Tap to hear me!" prompt.
+  // Try to auto-play once — but autoplay is usually blocked without a user
+  // gesture, so we also listen for the first interaction anywhere on the page
+  // and trigger the intro then.
   useEffect(() => {
     if (triedAuto.current) return;
     triedAuto.current = true;
-    const t = setTimeout(async () => {
-      await speak(character.intro);
-      // If the audio context never started playing, mark blocked.
-      setTimeout(() => setAutoBlocked((prev) => prev || !playing), 300);
-    }, 350);
+
+    let cancelled = false;
+    let played = false;
+
+    const tryPlay = async (fromGesture: boolean) => {
+      if (cancelled || played) return;
+      played = true;
+      const ok = await speak(character.intro)
+        .then(() => true)
+        .catch(() => false);
+      if (cancelled) return;
+      setHasPlayedOnce(true);
+      if (!ok && !fromGesture) setAutoBlocked(true);
+    };
+
+    // First try without gesture (works on some browsers / when synth is ready).
+    const t = setTimeout(() => {
+      tryPlay(false).catch(() => setAutoBlocked(true));
+    }, 400);
+
+    // Also bind a one-shot gesture listener as a reliable fallback.
+    const onGesture = () => {
+      tryPlay(true);
+      cleanup();
+    };
+    const cleanup = () => {
+      window.removeEventListener("pointerdown", onGesture);
+      window.removeEventListener("keydown", onGesture);
+      window.removeEventListener("touchstart", onGesture);
+    };
+    window.addEventListener("pointerdown", onGesture, { once: true });
+    window.addEventListener("keydown", onGesture, { once: true });
+    window.addEventListener("touchstart", onGesture, { once: true });
+
+    // After a short window, if nothing played yet, surface the "tap to hear" hint.
+    const hintTimer = setTimeout(() => {
+      if (!played) setAutoBlocked(true);
+    }, 1500);
+
     return () => {
+      cancelled = true;
       clearTimeout(t);
+      clearTimeout(hintTimer);
+      cleanup();
       stop();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [character.id]);
 
-  const replay = () => {
+  const replay = async () => {
     sfxSparkle();
     if (playing) {
       stop();
-    } else {
-      speak(character.intro);
-      setAutoBlocked(false);
+      return;
     }
+    setAutoBlocked(false);
+    await speak(character.intro);
+    setHasPlayedOnce(true);
   };
 
   return (
@@ -69,7 +109,7 @@ export const IntroBanner = () => {
               <>
                 <Pause className="w-4 h-4" /> Stop
               </>
-            ) : autoBlocked ? (
+            ) : autoBlocked && !hasPlayedOnce ? (
               <>
                 <VolumeX className="w-4 h-4" /> Tap to hear me!
               </>
