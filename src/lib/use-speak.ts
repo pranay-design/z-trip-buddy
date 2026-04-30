@@ -37,11 +37,40 @@ function speakWithBrowser(
   try {
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
-    const voice = pickBrowserVoice(character);
-    if (voice) utter.voice = voice;
-    // Slightly higher pitch for a "cute" mascot feel.
-    utter.pitch = character.id === "kitsune" ? 1.2 : character.id === "maneki" ? 1.4 : 1.1;
-    utter.rate = character.voiceSettings?.speed ?? 1.0;
+    const voices = window.speechSynthesis.getVoices();
+
+    // Pick a distinct voice per character so personalities feel different.
+    let chosen: SpeechSynthesisVoice | undefined;
+    if (character.id === "tanuki") {
+      // Deep / male-ish for mischievous Pon
+      chosen =
+        voices.find((v) => /en/i.test(v.lang) && /(male|daniel|fred|alex|google uk english male)/i.test(v.name)) ||
+        voices.find((v) => /en-GB/i.test(v.lang));
+    } else if (character.id === "maneki") {
+      // Bright / female for cheerful Miko
+      chosen =
+        voices.find((v) => /en/i.test(v.lang) && /(samantha|karen|tessa|google us english|female)/i.test(v.name)) ||
+        voices.find((v) => /en-US/i.test(v.lang));
+    } else {
+      // Soft / mystical for wise Kit
+      chosen =
+        voices.find((v) => /en/i.test(v.lang) && /(moira|fiona|serena|google uk english female)/i.test(v.name)) ||
+        voices.find((v) => /en-AU|en-IE|en-GB/i.test(v.lang));
+    }
+    chosen = chosen || voices.find((v) => v.lang?.toLowerCase().startsWith("en")) || voices[0];
+    if (chosen) utter.voice = chosen;
+
+    // Distinct pitch & rate per character
+    if (character.id === "tanuki") {
+      utter.pitch = 0.8;
+      utter.rate = 1.05;
+    } else if (character.id === "maneki") {
+      utter.pitch = 1.6;
+      utter.rate = 1.1;
+    } else {
+      utter.pitch = 1.15;
+      utter.rate = 0.9;
+    }
     utter.onend = onEnd;
     utter.onerror = onEnd;
     window.speechSynthesis.speak(utter);
