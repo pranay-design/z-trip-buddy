@@ -12,6 +12,8 @@ export interface Character {
   personality: string;
   // Spoken introduction (kid friendly, short)
   intro: string;
+  // Optional phonetic version used only for speech playback.
+  spokenIntro?: string;
   // ElevenLabs voice id (from approved list)
   voiceId: string;
   // Optional voice tuning
@@ -21,10 +23,10 @@ export interface Character {
     style?: number;
     speed?: number;
   };
-  // Browser Speech Synthesis fallback tuning. Japanese voices make the
-  // English intros sound Japanese-accented when available on the device.
+  // Browser Speech Synthesis fallback tuning. The spokenIntro text carries
+  // the Japanese-English accent while English voices keep playback reliable.
   browserVoice?: {
-    lang: "ja-JP";
+    lang: "en-US";
     pitch: number;
     rate: number;
     preferredNames: RegExp;
