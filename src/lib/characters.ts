@@ -34,8 +34,8 @@ export const CHARACTERS: Record<CharacterId, Character> = {
     personality: "playful, mischievous, loves snacks and surprises",
     intro:
       "Hi hi! I'm Pon the Tanuki! I'm a lucky shape-shifter from Japanese folklore. Let's hunt for fun facts together!",
-    voiceId: "iP95p4xoKVk53GoZ742B", // Chris — warm, friendly
-    voiceSettings: { stability: 0.4, similarity_boost: 0.8, style: 0.55, speed: 1.05 },
+    voiceId: "nPczCjzI2devNBz1zQrb", // Brian — deep, jolly, mischievous
+    voiceSettings: { stability: 0.3, similarity_boost: 0.75, style: 0.7, speed: 1.1 },
     accentHsl: "28 80% 50%",
   },
   maneki: {
@@ -46,8 +46,8 @@ export const CHARACTERS: Record<CharacterId, Character> = {
     personality: "cheerful, polite, brings good luck",
     intro:
       "Konnichiwa! I'm Miko the lucky cat! My paw waves in good fortune. Ready to discover something wonderful?",
-    voiceId: "XrExE9yKIg1WjnnlVkGX", // Matilda — sweet, friendly
-    voiceSettings: { stability: 0.45, similarity_boost: 0.85, style: 0.5, speed: 1.0 },
+    voiceId: "pFZP5JQG7iQjIQuC4Bku", // Lily — sweet, high, cheerful
+    voiceSettings: { stability: 0.55, similarity_boost: 0.9, style: 0.4, speed: 1.08 },
     accentHsl: "350 80% 60%",
   },
   kitsune: {
@@ -58,8 +58,8 @@ export const CHARACTERS: Record<CharacterId, Character> = {
     personality: "wise, curious, magical fox spirit",
     intro:
       "Greetings, little explorer! I am Kit the Kitsune, a clever fox spirit. Together we shall uncover Japan's secrets!",
-    voiceId: "FGY2WhTYpPnrIDTdsKH5", // Laura — bright, expressive
-    voiceSettings: { stability: 0.5, similarity_boost: 0.8, style: 0.45, speed: 1.0 },
+    voiceId: "SAz9YHcvj6GT2YYXdXww", // River — calm, mystical, wise
+    voiceSettings: { stability: 0.7, similarity_boost: 0.8, style: 0.6, speed: 0.92 },
     accentHsl: "358 78% 54%",
   },
 };
