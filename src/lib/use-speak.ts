@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Character } from "@/lib/characters";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SpeakOptions {
   preferBrowser?: boolean;
@@ -18,6 +19,7 @@ interface UseSpeakResult {
 let voicesReadyPromise: Promise<SpeechSynthesisVoice[]> | null = null;
 let activeUtterance: SpeechSynthesisUtterance | null = null;
 let activeKeepAlive: ReturnType<typeof setInterval> | null = null;
+let sharedAudioContext: AudioContext | null = null;
 
 function clearActiveSpeech() {
   if (activeKeepAlive) {
@@ -25,6 +27,25 @@ function clearActiveSpeech() {
     activeKeepAlive = null;
   }
   activeUtterance = null;
+}
+
+function unlockAudioContext(): AudioContext | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const AC = window.AudioContext || (window as any).webkitAudioContext;
+    if (!sharedAudioContext) sharedAudioContext = new AC();
+    if (sharedAudioContext.state === "suspended") sharedAudioContext.resume().catch(() => {});
+    return sharedAudioContext;
+  } catch {
+    return null;
+  }
+}
+
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  const binary = window.atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
 }
 
 function loadVoices(): Promise<SpeechSynthesisVoice[]> {
