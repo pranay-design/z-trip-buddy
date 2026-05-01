@@ -403,11 +403,22 @@ export function useSpeak(character: Character): UseSpeakResult {
             if (!isStopNoise) {
               setDiagnostics((current) => ({ ...current, lastError: `Speech error: ${errorName}` }));
             }
-            settleStart(false);
             finish(isStopNoise ? "warn" : "error", `Speech synthesis error: ${errorName}`, {
               error: errorName,
               elapsedTime: (event as SpeechSynthesisEvent).elapsedTime,
               state: speechState(),
+            });
+            if (isStopNoise) {
+              settleStart(false);
+              return;
+            }
+            void speakWithBundledFallback(text, character, addLog, () => setPlaying(false)).then((ok) => {
+              setDiagnostics((current) => ({
+                ...current,
+                lastError: ok ? undefined : current.lastError,
+                selectedVoice: ok ? "bundled local fallback" : current.selectedVoice,
+              }));
+              settleStart(ok);
             });
           };
           utter.onpause = () => addLog("warn", "Speech paused by browser", speechState());
@@ -434,8 +445,15 @@ export function useSpeak(character: Character): UseSpeakResult {
             }
             const lastError = "Speech did not start within 2.5 seconds.";
             setDiagnostics((current) => ({ ...current, lastError }));
-            settleStart(false);
             finish("error", lastError, { state, userActivation: getUserActivationState() });
+            void speakWithBundledFallback(text, character, addLog, () => setPlaying(false)).then((ok) => {
+              setDiagnostics((current) => ({
+                ...current,
+                lastError: ok ? undefined : current.lastError,
+                selectedVoice: ok ? "bundled local fallback" : current.selectedVoice,
+              }));
+              settleStart(ok);
+            });
           }, 2500);
 
           activeKeepAlive = setInterval(() => {
