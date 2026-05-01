@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Character } from "@/lib/characters";
+import meSpeak from "mespeak";
+import meSpeakConfig from "mespeak/src/mespeak_config.json";
+import englishVoice from "mespeak/voices/en/en-us.json";
 
 type VoiceLogLevel = "info" | "success" | "warn" | "error";
 
@@ -37,6 +40,8 @@ let activeUtterance: SpeechSynthesisUtterance | null = null;
 let activeKeepAlive: ReturnType<typeof setInterval> | null = null;
 let activeStartTimer: ReturnType<typeof setTimeout> | null = null;
 let activeMaxTimer: ReturnType<typeof setTimeout> | null = null;
+let activeFallbackAudio: HTMLAudioElement | null = null;
+let meSpeakReady = false;
 let logId = 0;
 
 function detailToString(detail: unknown): string | undefined {
