@@ -482,9 +482,16 @@ export function useSpeak(character: Character): UseSpeakResult {
           const lastError = detailToString(error) ?? "Unknown speech startup error";
           setDiagnostics((current) => ({ ...current, lastError }));
           clearActiveSpeech();
-          setPlaying(false);
           addLog("error", "Speech startup threw an exception", error);
-          settleStart(false);
+          void speakWithBundledFallback(text, character, addLog, () => setPlaying(false)).then((ok) => {
+            setDiagnostics((current) => ({
+              ...current,
+              lastError: ok ? undefined : current.lastError,
+              selectedVoice: ok ? "bundled local fallback" : current.selectedVoice,
+            }));
+            if (!ok) setPlaying(false);
+            settleStart(ok);
+          });
         }
       }),
     [addLog, character]
