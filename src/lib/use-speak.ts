@@ -273,8 +273,8 @@ export function useSpeak(character: Character): UseSpeakResult {
       selectedVoice: selected ? `${selected.name} (${selected.lang})` : undefined,
       lastError: voices.length ? undefined : "No system voices were returned by the browser.",
     });
-    addLog(selected ? "success" : "warn", selected ? "Selected intro voice" : "Using browser default voice", {
-      selected: selected ? `${selected.name} (${selected.lang})` : null,
+    addLog(selected ? "success" : "warn", selected ? "Selected intro voice" : "No browser voices; bundled fallback will be used on playback", {
+      selected: selected ? `${selected.name} (${selected.lang})` : "bundled local fallback",
       voiceCount: voices.length,
       pitch: character.browserVoice?.pitch,
       rate: character.browserVoice?.rate,
