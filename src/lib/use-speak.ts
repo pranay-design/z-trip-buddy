@@ -294,6 +294,11 @@ export function useSpeak(character: Character): UseSpeakResult {
     } catch (error) {
       addLog("error", "speechSynthesis.cancel failed", error);
     }
+    if (activeFallbackAudio) {
+      activeFallbackAudio.pause();
+      activeFallbackAudio.currentTime = 0;
+      activeFallbackAudio = null;
+    }
     clearActiveSpeech();
     setPlaying(false);
   }, [addLog]);
