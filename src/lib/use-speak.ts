@@ -78,6 +78,26 @@ function speechState() {
   return { speaking: synth.speaking, pending: synth.pending, paused: synth.paused };
 }
 
+function getFallbackOptions(character: Character) {
+  if (character.id === "tanuki") return { pitch: 34, speed: 142, wordgap: 2, amplitude: 112, variant: "m3" };
+  if (character.id === "maneki") return { pitch: 72, speed: 174, wordgap: 1, amplitude: 105, variant: "f5" };
+  return { pitch: 52, speed: 128, wordgap: 3, amplitude: 98, variant: "f2" };
+}
+
+function ensureMeSpeakReady(addLog: (level: VoiceLogLevel, message: string, detail?: unknown) => void) {
+  if (meSpeakReady) return true;
+  try {
+    meSpeak.loadConfig(meSpeakConfig);
+    meSpeak.loadVoice(englishVoice);
+    meSpeakReady = true;
+    addLog("success", "Bundled fallback voice engine loaded");
+    return true;
+  } catch (error) {
+    addLog("error", "Bundled fallback voice engine failed to load", error);
+    return false;
+  }
+}
+
 function pickVoiceFor(character: Character, voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | undefined {
   if (!voices.length) return undefined;
   const profile = character.browserVoice;
