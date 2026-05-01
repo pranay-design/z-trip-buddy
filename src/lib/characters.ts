@@ -1,5 +1,5 @@
 // Three Japanese mascot-inspired characters that cycle each app load.
-// Each has its own personality, color theme, voice (ElevenLabs voice id), and intro.
+// Each has its own personality, color theme, voice, and intro.
 
 export type CharacterId = "tanuki" | "maneki" | "kitsune";
 
@@ -12,21 +12,20 @@ export interface Character {
   personality: string;
   // Spoken introduction (kid friendly, short)
   intro: string;
-  // Optional phonetic version used only for speech playback.
-  spokenIntro?: string;
-  // ElevenLabs voice id (from approved list)
+  // Short surprised exclamation spoken when a new fact/photo arrives
+  surprise: string;
+  // ElevenLabs voice id (kept for reference; browser TTS is what plays)
   voiceId: string;
-  // Optional voice tuning
   voiceSettings?: {
     stability?: number;
     similarity_boost?: number;
     style?: number;
     speed?: number;
   };
-  // Browser Speech Synthesis fallback tuning. The spokenIntro text carries
-  // the Japanese-English accent while English voices keep playback reliable.
-  browserVoice?: {
-    lang: "en-US";
+  // Browser Speech Synthesis tuning. Distinct pitch/rate per character so
+  // each mascot sounds clearly different on the same device.
+  browserVoice: {
+    lang: "en-US" | "en-GB";
     pitch: number;
     rate: number;
     preferredNames: RegExp;
@@ -44,11 +43,16 @@ export const CHARACTERS: Record<CharacterId, Character> = {
     personality: "playful, mischievous, loves snacks and surprises",
     intro:
       "Hi hi! I'm Pon the Tanuki! I'm a lucky shape-shifter from Japanese folklore. Let's hunt for fun facts together!",
-    spokenIntro:
-      "Hai hai! I am Pon za Tanuki! I am a rakkii shape-shiftaa from Japanese folklore. Rettsu hunt for fun facts togethaa!",
-    voiceId: "nPczCjzI2devNBz1zQrb", // Brian — deep, jolly, mischievous
+    surprise: "Whoa! Look what I found!",
+    voiceId: "nPczCjzI2devNBz1zQrb",
     voiceSettings: { stability: 0.3, similarity_boost: 0.75, style: 0.7, speed: 1.1 },
-    browserVoice: { lang: "en-US", pitch: 0.82, rate: 0.92, preferredNames: /(daniel|alex|fred|google.*english|microsoft.*david|microsoft.*guy)/i },
+    // Low, jolly voice — prefer deep male English voices
+    browserVoice: {
+      lang: "en-US",
+      pitch: 0.6,
+      rate: 1.05,
+      preferredNames: /(daniel|fred|alex|google.*us.*english|microsoft.*(david|guy|mark))/i,
+    },
     accentHsl: "28 80% 50%",
   },
   maneki: {
@@ -59,11 +63,16 @@ export const CHARACTERS: Record<CharacterId, Character> = {
     personality: "cheerful, polite, brings good luck",
     intro:
       "Konnichiwa! I'm Miko the lucky cat! My paw waves in good fortune. Ready to discover something wonderful?",
-    spokenIntro:
-      "Konnichiwa! I am Miko za rakkii catto! My paw waves in good fochun. Ready to discover something wandafuru?",
-    voiceId: "pFZP5JQG7iQjIQuC4Bku", // Lily — sweet, high, cheerful
+    surprise: "Nyaa! How wonderful!",
+    voiceId: "pFZP5JQG7iQjIQuC4Bku",
     voiceSettings: { stability: 0.55, similarity_boost: 0.9, style: 0.4, speed: 1.08 },
-    browserVoice: { lang: "en-US", pitch: 1.58, rate: 1.02, preferredNames: /(samantha|victoria|karen|zira|google.*english|microsoft.*jenny|microsoft.*aria)/i },
+    // High, sweet voice — prefer bright female English voices
+    browserVoice: {
+      lang: "en-US",
+      pitch: 1.8,
+      rate: 1.15,
+      preferredNames: /(samantha|victoria|karen|zira|google.*us.*english.*female|microsoft.*(jenny|aria|zira))/i,
+    },
     accentHsl: "350 80% 60%",
   },
   kitsune: {
@@ -74,11 +83,16 @@ export const CHARACTERS: Record<CharacterId, Character> = {
     personality: "wise, curious, magical fox spirit",
     intro:
       "Greetings, little explorer! I am Kit the Kitsune, a clever fox spirit. Together we shall uncover Japan's secrets!",
-    spokenIntro:
-      "Guriitings, rittle explorer! I am Kit za Kitsune, a clever fox supiritto. Togethaa we shall uncover Japan's shiikuretsu!",
-    voiceId: "SAz9YHcvj6GT2YYXdXww", // River — calm, mystical, wise
+    surprise: "Ahh, fascinating!",
+    voiceId: "SAz9YHcvj6GT2YYXdXww",
     voiceSettings: { stability: 0.7, similarity_boost: 0.8, style: 0.6, speed: 0.92 },
-    browserVoice: { lang: "en-US", pitch: 1.04, rate: 0.82, preferredNames: /(serena|fiona|moira|google.*english|microsoft.*aria|microsoft.*jenny)/i },
+    // Calm, mid-pitched mystical voice — slower, prefer softer voices (UK if available)
+    browserVoice: {
+      lang: "en-GB",
+      pitch: 1.1,
+      rate: 0.8,
+      preferredNames: /(serena|fiona|moira|daniel.*uk|google.*uk.*english|microsoft.*(libby|sonia|ryan))/i,
+    },
     accentHsl: "358 78% 54%",
   },
 };

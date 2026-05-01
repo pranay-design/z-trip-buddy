@@ -7,6 +7,8 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Mascot } from "@/components/Mascot";
 import { useSaved, newId } from "@/lib/saved";
 import { sfxSparkle, sfxSave, sfxOops, sfxPop } from "@/lib/sounds";
+import { useCharacter } from "@/lib/character-context";
+import { useSpeak } from "@/lib/use-speak";
 import type { FactCard } from "@/lib/types";
 
 const CHIPS = ["animals", "food", "ninjas", "trains", "temples", "Tokyo", "Kyoto", "anime", "festivals"];
@@ -16,6 +18,8 @@ export const SearchScreen = () => {
   const [card, setCard] = useState<FactCard | null>(null);
   const [loading, setLoading] = useState(false);
   const { add, isSaved } = useSaved();
+  const character = useCharacter();
+  const { speak } = useSpeak(character);
 
   const ask = async (topic: string) => {
     if (!topic.trim()) {
@@ -47,6 +51,7 @@ export const SearchScreen = () => {
         topic,
         savedAt: Date.now(),
       });
+      void speak(character.surprise, { source: "button" });
     } catch (e) {
       console.error(e);
       toast.error("Hmm, try again!");
