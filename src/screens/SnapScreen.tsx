@@ -7,6 +7,8 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Mascot } from "@/components/Mascot";
 import { useSaved, newId } from "@/lib/saved";
 import { sfxShutter, sfxSave, sfxOops, sfxPop } from "@/lib/sounds";
+import { useCharacter } from "@/lib/character-context";
+import { useSpeak } from "@/lib/use-speak";
 import type { PhotoCard } from "@/lib/types";
 import { fileToResizedDataUrl } from "@/lib/image";
 
@@ -16,6 +18,8 @@ export const SnapScreen = () => {
   const [card, setCard] = useState<PhotoCard | null>(null);
   const [loading, setLoading] = useState(false);
   const { add, isSaved } = useSaved();
+  const character = useCharacter();
+  const { speak } = useSpeak(character);
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -50,6 +54,7 @@ export const SnapScreen = () => {
         mascotSays: data.mascotSays,
         savedAt: Date.now(),
       });
+      void speak(character.surprise, { source: "button" });
     } catch (e) {
       console.error(e);
       sfxOops();

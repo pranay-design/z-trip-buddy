@@ -8,12 +8,16 @@ import { Mascot } from "@/components/Mascot";
 import { IntroBanner } from "@/components/IntroBanner";
 import { useSaved, newId } from "@/lib/saved";
 import { sfxSparkle, sfxSave, sfxOops } from "@/lib/sounds";
+import { useCharacter } from "@/lib/character-context";
+import { useSpeak } from "@/lib/use-speak";
 import type { FactCard } from "@/lib/types";
 
 export const RandomScreen = () => {
   const [card, setCard] = useState<FactCard | null>(null);
   const [loading, setLoading] = useState(false);
   const { add, isSaved } = useSaved();
+  const character = useCharacter();
+  const { speak } = useSpeak(character);
 
   const spin = async () => {
     sfxSparkle();
@@ -40,6 +44,7 @@ export const RandomScreen = () => {
         source: "random",
         savedAt: Date.now(),
       });
+      void speak(character.surprise, { source: "button" });
     } catch (e) {
       console.error(e);
       sfxOops();
