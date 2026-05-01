@@ -150,6 +150,78 @@ function waitForVoices(
   });
 }
 
+function speakWithBundledFallback(
+  text: string,
+  character: Character,
+  addLog: (level: VoiceLogLevel, message: string, detail?: unknown) => void,
+  onEnd: () => void
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof Audio === "undefined") {
+      addLog("error", "Bundled fallback cannot play because HTMLAudioElement is unavailable");
+      resolve(false);
+      return;
+    }
+    if (!ensureMeSpeakReady(addLog)) {
+      resolve(false);
+      return;
+    }
+
+    try {
+      const options = { ...getFallbackOptions(character), rawdata: "mime" as const };
+      const dataUrl = meSpeak.speak(text, options) as string | null;
+      if (!dataUrl || typeof dataUrl !== "string") {
+        addLog("error", "Bundled fallback generated no audio", options);
+        resolve(false);
+        return;
+      }
+
+      if (activeFallbackAudio) {
+        activeFallbackAudio.pause();
+        activeFallbackAudio = null;
+      }
+
+      const audio = new Audio(dataUrl);
+      activeFallbackAudio = audio;
+      let started = false;
+      const finish = (level: VoiceLogLevel, message: string, detail?: unknown) => {
+        if (activeFallbackAudio === audio) activeFallbackAudio = null;
+        addLog(level, message, detail);
+        onEnd();
+      };
+
+      audio.onplaying = () => {
+        started = true;
+        addLog("success", "Bundled fallback audio started", { options });
+        resolve(true);
+      };
+      audio.onended = () => finish("success", "Bundled fallback audio ended normally");
+      audio.onerror = () => {
+        const error = audio.error ? { code: audio.error.code, message: audio.error.message } : "unknown audio error";
+        finish("error", "Bundled fallback audio playback failed", error);
+        if (!started) resolve(false);
+      };
+
+      const playResult = audio.play();
+      playResult
+        .then(() => {
+          if (!started) {
+            addLog("success", "Bundled fallback audio play promise resolved");
+            resolve(true);
+          }
+        })
+        .catch((error) => {
+          finish("error", "Bundled fallback audio.play was blocked or failed", error);
+          resolve(false);
+        });
+    } catch (error) {
+      addLog("error", "Bundled fallback threw an exception", error);
+      onEnd();
+      resolve(false);
+    }
+  });
+}
+
 export function useSpeak(character: Character): UseSpeakResult {
   const [loading, setLoading] = useState(false);
   const [playing, setPlaying] = useState(false);
