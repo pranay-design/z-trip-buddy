@@ -238,8 +238,9 @@ export function useSpeak(character: Character): UseSpeakResult {
           resolve(ok);
         };
 
+        let currentUtterance: SpeechSynthesisUtterance | null = null;
         const finish = (level: VoiceLogLevel, message: string, detail?: unknown) => {
-          if (finished || activeUtterance !== utter) return;
+          if (finished || !currentUtterance || activeUtterance !== currentUtterance) return;
           finished = true;
           addLog(level, message, detail ?? speechState());
           clearActiveSpeech();
@@ -255,6 +256,7 @@ export function useSpeak(character: Character): UseSpeakResult {
           const voices = synth.getVoices();
           const selected = pickVoiceFor(character, voices);
           const utter = new SpeechSynthesisUtterance(text);
+          currentUtterance = utter;
           if (selected) {
             utter.voice = selected;
             utter.lang = selected.lang;
