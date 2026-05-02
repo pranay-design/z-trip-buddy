@@ -16,7 +16,7 @@ interface Props {
 }
 
 export const FactCardView = ({ item, saved, onSave, onRemove, onMoreLoaded, className }: Props) => {
-  const [imgErr, setImgErr] = useState(false);
+  
   const isPhoto = item.kind === "photo";
   const fact = item as FactCard;
   const photo = item as PhotoCard;
