@@ -40,6 +40,7 @@ export const RandomScreen = () => {
         fact: data.fact,
         category: data.category,
         imageUrl: data.imageUrl,
+        imageUrls: data.imageUrls,
         mascotSays: data.mascotSays,
         source: "random",
         savedAt: Date.now(),

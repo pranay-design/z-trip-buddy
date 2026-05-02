@@ -13,6 +13,7 @@ export interface FactCard {
   fact: string;
   category: string;
   imageUrl: string;
+  imageUrls?: string[];
   mascotSays?: string;
   source: "random" | "topic";
   topic?: string;
