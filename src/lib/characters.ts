@@ -46,12 +46,12 @@ export const CHARACTERS: Record<CharacterId, Character> = {
     surprise: "Whoa! Look what I found!",
     voiceId: "nPczCjzI2devNBz1zQrb",
     voiceSettings: { stability: 0.3, similarity_boost: 0.75, style: 0.7, speed: 1.1 },
-    // Low, jolly voice — prefer deep male English voices
+    // Warm, friendly male voice — neutral accent, slightly lower pitch
     browserVoice: {
       lang: "en-US",
-      pitch: 0.6,
-      rate: 1.05,
-      preferredNames: /(daniel|fred|alex|google.*us.*english|microsoft.*(david|guy|mark))/i,
+      pitch: 0.95,
+      rate: 1.0,
+      preferredNames: /(alex|google.*us.*english|microsoft.*(david|guy|mark)|samantha)/i,
     },
     accentHsl: "28 80% 50%",
   },
@@ -66,12 +66,12 @@ export const CHARACTERS: Record<CharacterId, Character> = {
     surprise: "Nyaa! How wonderful!",
     voiceId: "pFZP5JQG7iQjIQuC4Bku",
     voiceSettings: { stability: 0.55, similarity_boost: 0.9, style: 0.4, speed: 1.08 },
-    // High, sweet voice — prefer bright female English voices
+    // Cheerful female voice — neutral accent, slightly brighter than default
     browserVoice: {
       lang: "en-US",
-      pitch: 1.8,
-      rate: 1.15,
-      preferredNames: /(samantha|victoria|karen|zira|google.*us.*english.*female|microsoft.*(jenny|aria|zira))/i,
+      pitch: 1.2,
+      rate: 1.05,
+      preferredNames: /(samantha|victoria|google.*us.*english|microsoft.*(jenny|aria|zira))/i,
     },
     accentHsl: "350 80% 60%",
   },
