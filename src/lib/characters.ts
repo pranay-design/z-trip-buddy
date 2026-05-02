@@ -46,12 +46,12 @@ export const CHARACTERS: Record<CharacterId, Character> = {
     surprise: "Whoa! Look what I found!",
     voiceId: "nPczCjzI2devNBz1zQrb",
     voiceSettings: { stability: 0.3, similarity_boost: 0.75, style: 0.7, speed: 1.1 },
-    // Warm, friendly male voice — neutral accent, slightly lower pitch
+    // Pon: deeper, slower, jolly male voice (US English) — playful uncle vibe
     browserVoice: {
       lang: "en-US",
-      pitch: 0.95,
-      rate: 1.0,
-      preferredNames: /(alex|google.*us.*english|microsoft.*(david|guy|mark)|samantha)/i,
+      pitch: 0.7,
+      rate: 0.95,
+      preferredNames: /(microsoft\s*(guy|davis|mark|david)|google\s*us\s*english|alex|fred|daniel)/i,
     },
     accentHsl: "28 80% 50%",
   },
@@ -66,12 +66,12 @@ export const CHARACTERS: Record<CharacterId, Character> = {
     surprise: "Nyaa! How wonderful!",
     voiceId: "pFZP5JQG7iQjIQuC4Bku",
     voiceSettings: { stability: 0.55, similarity_boost: 0.9, style: 0.4, speed: 1.08 },
-    // Cheerful female voice — neutral accent, slightly brighter than default
+    // Miko: bright, fast, high-pitched female voice (US English) — bubbly kid-show host
     browserVoice: {
       lang: "en-US",
-      pitch: 1.2,
-      rate: 1.05,
-      preferredNames: /(samantha|victoria|google.*us.*english|microsoft.*(jenny|aria|zira))/i,
+      pitch: 1.6,
+      rate: 1.15,
+      preferredNames: /(microsoft\s*(zira|aria|jenny)|samantha|victoria|google\s*us\s*english|karen)/i,
     },
     accentHsl: "350 80% 60%",
   },
@@ -86,12 +86,12 @@ export const CHARACTERS: Record<CharacterId, Character> = {
     surprise: "Ahh, fascinating!",
     voiceId: "SAz9YHcvj6GT2YYXdXww",
     voiceSettings: { stability: 0.7, similarity_boost: 0.8, style: 0.6, speed: 0.92 },
-    // Calm, mid-pitched mystical voice — slower, prefer softer voices (UK if available)
+    // Kit: calm, mid-pitched, slow & wise — keep current personality (US English, neutral)
     browserVoice: {
-      lang: "en-GB",
-      pitch: 1.1,
-      rate: 0.8,
-      preferredNames: /(serena|fiona|moira|daniel.*uk|google.*uk.*english|microsoft.*(libby|sonia|ryan))/i,
+      lang: "en-US",
+      pitch: 1.05,
+      rate: 0.85,
+      preferredNames: /(microsoft\s*(aria|jenny)|samantha|google\s*us\s*english|microsoft\s*davis)/i,
     },
     accentHsl: "358 78% 54%",
   },

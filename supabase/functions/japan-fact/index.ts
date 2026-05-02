@@ -135,32 +135,46 @@ async function callMore(title: string, fact: string, topic?: string) {
   return { data: JSON.parse(call.function.arguments) };
 }
 
-// Try Wikipedia first (real, topical photos). Fallback to a deterministic Picsum image.
-async function findImage(query: string): Promise<string> {
+// Try Wikipedia first (real, topical photos). Returns up to `max` distinct image URLs.
+// Falls back to deterministic Picsum images if nothing is found.
+async function findImages(query: string, max = 3): Promise<string[]> {
   const clean = query.trim();
+  const found: string[] = [];
+  const seen = new Set<string>();
+
+  const push = (url?: string) => {
+    if (!url || seen.has(url)) return;
+    seen.add(url);
+    found.push(url);
+  };
+
   try {
-    // 1) Search for the best matching page
-    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(clean + " Japan")}&format=json&origin=*&srlimit=3`;
+    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(
+      clean + " Japan"
+    )}&format=json&origin=*&srlimit=8`;
     const sRes = await fetch(searchUrl, { headers: { "User-Agent": "JapanTripBuddy/1.0" } });
     if (sRes.ok) {
       const sJson = await sRes.json();
       const hits: { title: string }[] = sJson?.query?.search ?? [];
       for (const hit of hits) {
-        // 2) Get the page's lead image
+        if (found.length >= max) break;
         const sumUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(hit.title)}`;
         const pRes = await fetch(sumUrl, { headers: { "User-Agent": "JapanTripBuddy/1.0" } });
         if (!pRes.ok) continue;
         const pJson = await pRes.json();
-        const img = pJson?.originalimage?.source || pJson?.thumbnail?.source;
-        if (img) return img;
+        push(pJson?.originalimage?.source || pJson?.thumbnail?.source);
       }
     }
   } catch (e) {
     console.error("wiki image lookup failed", e);
   }
-  // Fallback: deterministic colorful placeholder based on query
-  const seed = encodeURIComponent(clean.toLowerCase());
-  return `https://picsum.photos/seed/${seed}-japan/800/600`;
+
+  let i = 0;
+  while (found.length < max) {
+    const seed = encodeURIComponent(`${clean.toLowerCase()}-${i++}-japan`);
+    push(`https://picsum.photos/seed/${seed}/800/600`);
+  }
+  return found.slice(0, max);
 }
 
 Deno.serve(async (req) => {
@@ -216,9 +230,9 @@ Deno.serve(async (req) => {
     }
 
     const args = result.data;
-    const imageUrl = await findImage(args.imageQuery);
+    const imageUrls = await findImages(args.imageQuery, 3);
 
-    return new Response(JSON.stringify({ ...args, imageUrl }), {
+    return new Response(JSON.stringify({ ...args, imageUrl: imageUrls[0], imageUrls }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

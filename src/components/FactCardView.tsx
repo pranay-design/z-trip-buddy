@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PhotoCarousel } from "@/components/PhotoCarousel";
 
 interface Props {
   item: SavedItem;
@@ -15,7 +16,7 @@ interface Props {
 }
 
 export const FactCardView = ({ item, saved, onSave, onRemove, onMoreLoaded, className }: Props) => {
-  const [imgErr, setImgErr] = useState(false);
+  
   const isPhoto = item.kind === "photo";
   const fact = item as FactCard;
   const photo = item as PhotoCard;
@@ -25,11 +26,15 @@ export const FactCardView = ({ item, saved, onSave, onRemove, onMoreLoaded, clas
   const [expanded, setExpanded] = useState(false);
 
   const fallbackImg = `https://picsum.photos/seed/${encodeURIComponent(item.title)}-japan/800/600`;
-  const imageSrc = isPhoto
-    ? photo.imageDataUrl
-    : imgErr
-    ? fallbackImg
-    : fact.imageUrl;
+
+  // For fact cards we now show a swipeable carousel of up to 3 candidate photos
+  // (the AI's photo guess can be off, so we give the kid options).
+  const factImages =
+    !isPhoto && fact.imageUrls && fact.imageUrls.length > 0
+      ? fact.imageUrls
+      : !isPhoto && fact.imageUrl
+      ? [fact.imageUrl]
+      : [];
 
   const fetchMore = async () => {
     if (more) {
@@ -70,16 +75,19 @@ export const FactCardView = ({ item, saved, onSave, onRemove, onMoreLoaded, clas
       )}
     >
       <div className="relative aspect-[4/3] bg-muted overflow-hidden border-b-[3px] border-foreground">
-        <img
-          src={imageSrc}
-          alt={item.title}
-          className="w-full h-full object-cover"
-          onError={() => setImgErr(true)}
-          loading="lazy"
-        />
-        <span className="stamp absolute top-3 right-3">{item.category}</span>
+        {isPhoto ? (
+          <img
+            src={photo.imageDataUrl}
+            alt={item.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <PhotoCarousel images={factImages} alt={item.title} fallback={fallbackImg} />
+        )}
+        <span className="stamp absolute top-3 right-3 z-10">{item.category}</span>
         {isPhoto && photo.hasJapaneseText && (
-          <span className="absolute top-3 left-3 stamp" style={{ background: "hsl(var(--secondary))" }}>
+          <span className="absolute top-3 left-3 stamp z-10" style={{ background: "hsl(var(--secondary))" }}>
             日本語
           </span>
         )}

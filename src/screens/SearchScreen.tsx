@@ -46,6 +46,7 @@ export const SearchScreen = () => {
         fact: data.fact,
         category: data.category,
         imageUrl: data.imageUrl,
+        imageUrls: data.imageUrls,
         mascotSays: data.mascotSays,
         source: "topic",
         topic,
