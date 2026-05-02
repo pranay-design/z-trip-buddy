@@ -62,7 +62,7 @@ export const CHARACTERS: Record<CharacterId, Character> = {
     emoji: "🐱",
     personality: "cheerful, polite, brings good luck",
     intro:
-      "Konnichiwa! I'm Miko the lucky cat! My paw waves in good fortune. Ready to discover something wonderful?",
+      "Hello hello! I'm Miko the lucky cat! My paw waves in good fortune. Ready to discover something wonderful?",
     surprise: "Nyaa! How wonderful!",
     voiceId: "pFZP5JQG7iQjIQuC4Bku",
     voiceSettings: { stability: 0.55, similarity_boost: 0.9, style: 0.4, speed: 1.08 },

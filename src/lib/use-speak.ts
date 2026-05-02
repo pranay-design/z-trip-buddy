@@ -101,13 +101,32 @@ function ensureMeSpeakReady(addLog: (level: VoiceLogLevel, message: string, deta
 function pickVoiceFor(character: Character, voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | undefined {
   if (!voices.length) return undefined;
   const profile = character.browserVoice;
-  const englishVoices = voices.filter((v) => /^en[-_]/i.test(v.lang));
+
+  // Strictly English voices only — never let the browser pick a Japanese/other voice
+  // that mangles English pronunciation (e.g. saying "konnichiwa" as "koniKKiwwa").
+  const enUS = voices.filter((v) => /^en[-_]US/i.test(v.lang));
+  const enGB = voices.filter((v) => /^en[-_]GB/i.test(v.lang));
+  const anyEn = voices.filter((v) => /^en[-_]/i.test(v.lang));
+
+  const wantsGB = profile?.lang === "en-GB";
+  const primary = wantsGB ? enGB : enUS;
+  const secondary = wantsGB ? enUS : enGB;
+
+  const byName = (pool: SpeechSynthesisVoice[]) =>
+    profile ? pool.find((v) => profile.preferredNames.test(v.name)) : undefined;
+
+  // Common neutral/American voices across platforms
+  const NEUTRAL_US = /(samantha|alex|google\s*us\s*english|microsoft\s*(aria|jenny|guy|davis|david|zira))/i;
+  const byNeutral = (pool: SpeechSynthesisVoice[]) => pool.find((v) => NEUTRAL_US.test(v.name));
 
   return (
-    (profile && englishVoices.find((v) => profile.preferredNames.test(v.name))) ||
-    englishVoices.find((v) => /google|microsoft|apple/i.test(v.name)) ||
-    englishVoices[0] ||
-    voices[0]
+    byName(primary) ||
+    byName(secondary) ||
+    byNeutral(primary) ||
+    byNeutral(anyEn) ||
+    primary[0] ||
+    secondary[0] ||
+    anyEn[0]
   );
 }
 
